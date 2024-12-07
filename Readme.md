@@ -84,6 +84,7 @@ To access protected routes, the request should include a valid `accessToken` in 
 - `GET /api/v1/me`: Checks if the user's `accessToken` is still valid.
 - `GET /api/v1/user`: Returns the details of the logged-in user.
 - `PATCH /api/v1/user/deactivate`: Deactivates the user account.
+- `PATCH /api/v1/user/changePassword`: Change the user password.
 
 ### Example Request (Get User Details):
 ```bash
@@ -100,7 +101,7 @@ curl --location 'http://localhost:8080/api/v1/user' --header 'Authorization: <ac
 
 The `PATCH /api/v1/deactivate` endpoint will deactivate the logged-in user account. 
 
-- After deactivation, the `accessToken` expires within 5 minutes.
+- After deactivation, the `accessToken` expires within 5 minutes. For instant invalidation it's value stored in a in-memory cache to blacklist the access token.
 - The user will no longer be able to generate new tokens or refresh them using the `refreshToken`.
 - Any existing authorization tokens will be invalidated.
 
@@ -110,9 +111,25 @@ The `PATCH /api/v1/deactivate` endpoint will deactivate the logged-in user accou
 ```bash
 curl --location --request PATCH 'http://localhost:8080/api/v1/deactivate' --header 'Authorization: <access_token_here>'
 ```
+---
 
-An alternative approach involves storing the current `Authorization` token in a centralized cache and blacklisting it during authorization checks in the middleware.
+The `PATCH /api/v1/changePassword` endpoint will change password of the logged-in user account. 
 
+- After changing password, the `accessToken` expires within 5 minutes. For instant invalidation it's value stored in a in-memory cache to blacklist the access token.
+- The user will no longer be able to generate new tokens or refresh them using the `refreshToken`.
+- Any existing authorization tokens will be invalidated.
+
+### Endpoint: `PATCH /api/v1/changePassword`
+
+### Example Request (using `curl`):
+```bash
+curl --location --request PATCH 'http://localhost:8080/api/v1/changePassword' \
+--header 'Authorization: <access_token_here>' \
+--header 'Content-Type: application/json' \
+--data '{
+    "password": "123456789"
+}'
+```
 ---
 
 ## 5. Refresh Access Token

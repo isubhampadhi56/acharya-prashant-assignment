@@ -30,6 +30,7 @@ func protectedRouter() http.Handler {
 		r.Get("/me", contoller.CheckIfSessionValid)
 		r.Get("/user", contoller.GetUserData)
 		r.Patch("/deactivate", contoller.DeActivateUser)
+		r.Patch("/changePassword", contoller.ChangePassword)
 	})
 	return r
 }

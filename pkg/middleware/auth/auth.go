@@ -5,11 +5,13 @@ import (
 	"net/http"
 	"strings"
 
+	tokencache "github.com/api-assignment/pkg/model/tokenCache"
 	jwtauth "github.com/api-assignment/pkg/utils/jwtAuth"
 	"github.com/api-assignment/pkg/utils/logger"
 )
 
 func AccessTokenVerify(next http.Handler) http.Handler {
+	var blackListedToken tokencache.BlackListedToken = tokencache.GetBlacklistTokenCache()
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log := logger.InitializeAuditLogger()
 		accessTokenHandler := jwtauth.GetAccessTokenHandler()
@@ -17,6 +19,11 @@ func AccessTokenVerify(next http.Handler) http.Handler {
 		if accessToken == "" || !strings.HasPrefix(accessToken, "Bearer ") {
 			http.Error(w, "missing or invalid access token", http.StatusUnauthorized)
 			log.Error("access token not present or invalid token")
+			return
+		}
+		if blackListedToken.IsPresent(accessToken) {
+			http.Error(w, "user has been disabled plase contact admin", http.StatusUnauthorized)
+			log.Error("user has been disabled plase contact admin ")
 			return
 		}
 		claims, err := accessTokenHandler.VerifyToken(accessToken)
