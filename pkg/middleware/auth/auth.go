@@ -22,8 +22,8 @@ func AccessTokenVerify(next http.Handler) http.Handler {
 			return
 		}
 		if blackListedToken.IsPresent(accessToken) {
-			http.Error(w, "user has been disabled plase contact admin", http.StatusUnauthorized)
-			log.Error("user has been disabled plase contact admin ")
+			http.Error(w, "token expired or user account has been updated", http.StatusUnauthorized)
+			log.Error("token expired or user account has been updated")
 			return
 		}
 		claims, err := accessTokenHandler.VerifyToken(accessToken)
