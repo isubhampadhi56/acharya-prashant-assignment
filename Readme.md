@@ -1,63 +1,142 @@
-### How to start Application - 
-The main file is under cmd directory. Just run it using go run cmd/main.go
-It uses sqlite DB to store users data.
-All Configs has been already present in pkg/config 
 
-### 1. User Signup
-The signup request should have a JSON object in it's body which should have email and password attributes.
-Note that email should be in valid format and password should be atleast 8 character in length. Otherwise input validation will fail and user will not be created.
+# API Documentation
 
+This document provides detailed instructions on how to interact with the application API for user authentication and token management.
 
-curl --location 'http://localhost:8080/api/v1/auth/signup' \
---header 'Content-Type: application/json' \
---data-raw '{
-    "email":"user1@mail.com",
+## Getting Started
+
+The main application file is located under the `cmd` directory. To start the application, run the following command:
+
+```bash
+go run cmd/main.go
+```
+
+The application uses SQLite as the database to store user data. All configuration files are already present in the `pkg/config` directory.
+
+---
+
+## 1. User Signup
+
+The signup request requires a JSON object in the body with `email` and `password` attributes. The email must be in a valid format, and the password must be at least 8 characters long. 
+
+### Endpoint: `POST /api/v1/auth/signup`
+
+**Request Body**:
+```json
+{
+    "email": "user1@mail.com",
+    "password": "123456789"
+}
+```
+
+**Validation**:
+- The email should be in a valid email format.
+- The password should be at least 8 characters long.
+
+### Example Request (using `curl`):
+```bash
+curl --location 'http://localhost:8080/api/v1/auth/signup' --header 'Content-Type: application/json' --data-raw '{
+    "email": "user1@mail.com",
     "password": "123456789"
 }'
+```
 
-### 2. User Login
-The login request should have a JSON object in it's body which should have email and password attributes.
-After Successful User Login it should return accessToken and refreshToken in response in JSON format.
+---
 
-curl --location 'http://localhost:8080/api/v1/auth/login' \
---header 'Content-Type: application/json' \
---data-raw '{
-    "email":"user1@mail.com",
+## 2. User Login
+
+The login request requires a JSON object in the body with `email` and `password` attributes. Upon successful login, the response will include both `accessToken` and `refreshToken`.
+
+### Endpoint: `POST /api/v1/auth/login`
+
+**Request Body**:
+```json
+{
+    "email": "user1@mail.com",
+    "password": "123456789"
+}
+```
+
+### Example Request (using `curl`):
+```bash
+curl --location 'http://localhost:8080/api/v1/auth/login' --header 'Content-Type: application/json' --data-raw '{
+    "email": "user1@mail.com",
     "password": "123456789"
 }'
+```
 
-### 3. Authorization Token and Protected Routes
-There are 2 protected Routes which requires a valid AccessToken to access.
-For accessing protected routes Authorization should be present on Request Header. 
+**Response**:
+```json
+{
+    "accessToken": "<access_token_here>",
+    "refreshToken": "<refresh_token_here>"
+}
+```
 
- - GET /api/v1/me which checks if user's access token is still valid or not.
- - GET /api/v1/user which returns the details of LoggedIn user
- - PATCH /api/v1/user/deactivate
+---
 
-curl --location 'http://localhost:8080/api/v1/me' \
---header 'Authorization: <Replace with your accessToken after login>'
+## 3. Authorization Token and Protected Routes
 
-curl --location 'http://localhost:8080/api/v1/user' \
---header 'Authorization: <Replace with your accessToken after login>'
+To access protected routes, the request should include a valid `accessToken` in the `Authorization` header.
 
-### 4. Revokation of Token
-PATCH /api/v1/deactivate API will deactivate the loggedIn User
-- After expiration of accesstoken user can't renew it using refreshtoken.
-- User login also won't generate accesstoken and refreshtoken after disabling user account.
-- The existing Authorization token will expire within 5 mins.
+### Protected Routes:
 
-curl --location --request PATCH 'http://localhost:8080/api/v1/deactivate' \
---header 'Authorization: <Replace with your accessToken after login>'
+- `GET /api/v1/me`: Checks if the user's `accessToken` is still valid.
+- `GET /api/v1/user`: Returns the details of the logged-in user.
+- `PATCH /api/v1/user/deactivate`: Deactivates the user account.
 
-The other approach is to store current Authorization token in some centralized cache and blacklist this token while checking for authorization in middleware.
+### Example Request (Get User Details):
+```bash
+curl --location 'http://localhost:8080/api/v1/me' --header 'Authorization: <access_token_here>'
+```
 
-### 5. Refresh Access Token
+```bash
+curl --location 'http://localhost:8080/api/v1/user' --header 'Authorization: <access_token_here>'
+```
 
-As per current config AccessToken expires in 5 minutes and refresh Token Expires in 72 Hours (defined in config). 
-To renew AccessToken a GET request has to be sent to api/v1/auth/token route.
-If the RefreshToken Header on Request is valid and user is active it will generate a valid access token and send it in Response Body.
-If the user's account has been deactivated or deleted or updated after Refresh Token got generated then the Refresh Token request will fail and prompt user to relogin.
+---
 
-curl --location 'http://localhost:8080/api/v1/auth/token' \
---header 'RefreshToken: <Replace with your refreshToken after login>'
+## 4. Revocation of Token
 
+The `PATCH /api/v1/deactivate` endpoint will deactivate the logged-in user account. 
+
+- After deactivation, the `accessToken` expires within 5 minutes.
+- The user will no longer be able to generate new tokens or refresh them using the `refreshToken`.
+- Any existing authorization tokens will be invalidated.
+
+### Endpoint: `PATCH /api/v1/deactivate`
+
+### Example Request (using `curl`):
+```bash
+curl --location --request PATCH 'http://localhost:8080/api/v1/deactivate' --header 'Authorization: <access_token_here>'
+```
+
+An alternative approach involves storing the current `Authorization` token in a centralized cache and blacklisting it during authorization checks in the middleware.
+
+---
+
+## 5. Refresh Access Token
+
+Access tokens expire in 5 minutes, while refresh tokens expire in 72 hours (configured in the `pkg/config`). To renew an `accessToken`, send a GET request to the `api/v1/auth/token` route with the valid `refreshToken`.
+
+### Endpoint: `GET /api/v1/auth/token`
+
+**Request Header**:
+```plaintext
+RefreshToken: <refresh_token_here>
+```
+
+**Response**:
+```json
+{
+    "accessToken": "<new_access_token_here>"
+}
+```
+
+If the refresh token is valid, and the user is active, a new `accessToken` will be generated. If the user's account has been deactivated or updated after the `refreshToken` was issued, the request will fail, prompting the user to log in again.
+
+### Example Request (using `curl`):
+```bash
+curl --location 'http://localhost:8080/api/v1/auth/token' --header 'RefreshToken: <refresh_token_here>'
+```
+---
