@@ -1,7 +1,7 @@
 package db
 
 import (
-	"fmt"
+	"log"
 
 	"gorm.io/gorm"
 )
@@ -13,22 +13,18 @@ type DB interface {
 
 var dBConn DB
 
-func GetDBConn() (DB, error) {
+func GetDBConn() DB {
 	if dBConn != nil {
-		return dBConn, nil
+		return dBConn
 	}
 
 	dbType := "sqlite"
-	var err error
 	switch dbType {
 	case "sqlite":
-		dBConn, err = InitializeSqliteDB()
-		if err != nil {
-			return nil, err
-		}
+		dBConn = InitializeSqliteDB()
 	default:
-		return nil, fmt.Errorf("unsupported Database Type")
+		log.Fatalf("invalid database type %s", dbType)
 	}
 
-	return dBConn, nil
+	return dBConn
 }

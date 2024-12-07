@@ -1,14 +1,21 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
+	"strconv"
 
+	"github.com/api-assignment/pkg/config"
 	router "github.com/api-assignment/pkg/routes"
+	"github.com/api-assignment/pkg/utils/logger"
 )
 
 func main() {
-	fmt.Println("Hello World")
 	router := router.MainRouter()
-	http.ListenAndServe(":3000", router)
+	port := strconv.Itoa(config.GetConfig().GetAppPort())
+	log := logger.InitializeAppLogger()
+	log.Info("Starting API Server on Port ", port)
+	err := http.ListenAndServe(":"+port, router)
+	if err != nil {
+		log.Fatalf("unable to start server on port %d ", port, err)
+	}
 }
